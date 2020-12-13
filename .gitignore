@@ -2,6 +2,10 @@
 .vscode/
 __pycache__/
 
+# Git specific files
+.gitattributes
+.gitignore
+
 # Ignore my settings / saves
 avatar.ini
 enemy.ini
