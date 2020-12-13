@@ -1,0 +1,22 @@
+[
+    {
+        "text": "Read Paper + Obsidian Notes",
+        "secondary_text": "Mon, Tue, Wed, Thu, Sat, Sun",
+        "tertiary_text": "08:00, 14:00",
+        "done_counter": 2,
+        "done_counter_max": 2,
+        "priority": "2",
+        "finish_date": "12.12.2020",
+        "last_used": ""
+    },
+    {
+        "text": "10 push-ups",
+        "secondary_text": "Mon, Tue, Wed, Thu, Fri",
+        "tertiary_text": "09:00, 11:00, 13:00",
+        "done_counter": 0,
+        "done_counter_max": 3,
+        "priority": "1",
+        "finish_date": "",
+        "last_used": ""
+    }
+]
