@@ -1,0 +1,7 @@
+# Ignore development config files
+.vscode/
+__pycache__/
+
+# Ignore my settings / saves
+avatar.ini
+enemy.ini
