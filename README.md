@@ -32,10 +32,13 @@ Due to bad to no reception all the time around my home and most other To-Do-List
     ```
 
 
+
 - Tasks 
     - with or without due date
     - Task can fail --> Enemy attacks Avatar
     - completed Tasks --> Avatar attacks Enemy
+    
+<img width="300" src="demo gifs\Tasks.gif">
 
 - Habits
     - repetition per day
@@ -44,6 +47,8 @@ Due to bad to no reception all the time around my home and most other To-Do-List
     - like Tasks can hurt your enemy or your avatar
     - only fails next day after not completing habit
     - can also be completed on days outside repetition cycle
+
+<img width="300" src="demo gifs\Habits.gif">
 
 - Enemy
     - gets attacked by Avatar via finishing Tasks and Habits
@@ -66,7 +71,6 @@ Due to bad to no reception all the time around my home and most other To-Do-List
 ## Roadmap
 - [ ] make available for other systems (currently only works on windows)
 - [ ] themed background
-- ...
 
 ## License
 [MIT License](LICENSE)
