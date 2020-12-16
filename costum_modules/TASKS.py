@@ -2,6 +2,7 @@
 # -----------------------------------------------------------------
 
 import sys
+
 from costum_modules.NOTIFICATIONS import *
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty, OptionProperty, StringProperty, NumericProperty, ListProperty
@@ -430,17 +431,23 @@ class BasicTask(ContainerSupport, BaseListItem):
 
             # cancel all trigger if task done before due_date
             self.cancel_notification_trigger()
-
+            
             # delete task
-            self.parent.remove_widget(self)
-
+            self.self_removal()
+            
+            # cancel auto_fail
+            self.cancel_fail_trigger()
+    
     def fail_task(self, *args):
         self.avatar.get_hit(self.opponent.attack)
 
         normal_notification(
-            title=f'Failed Task:{self.description}')
+            title=f'Failed Task: {self.description}')
 
     def create_fail_trigger(self, *args):
+        
+        # init _fail_trigger
+        self._fail_trigger = None
 
         # get current time
         now = datetime.datetime.now()
@@ -467,7 +474,8 @@ class BasicTask(ContainerSupport, BaseListItem):
                 pass
 
     def cancel_fail_trigger(self, *args):
-        self._fail_trigger.cancel()
+        if self._fail_trigger is not None:
+            self._fail_trigger.cancel()
 
     def update_fail_trigger(self, *args):
 
@@ -494,6 +502,7 @@ class BasicTask(ContainerSupport, BaseListItem):
                 self.call_deadline_notifications,
                 remaining_time
             )
+            
             # update notification trigger upon changes in task description and due_date
             self.bind(due_date=self.update_notification_trigger,
                       description=self.update_notification_trigger)
