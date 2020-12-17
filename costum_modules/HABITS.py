@@ -338,8 +338,13 @@ class HabitView(MDFloatLayout):
             child.check_for_disableing()
 
     def call_overview_notification(self, *args):
+        
+        # collects Habit.description of all active habits if habit is scheduled for this day
         content = [
-            child.text for child in self.ids.habit_list.children[::-1] if child.done_counter != child.done_counter_max]
+            child.text for child in self.ids.habit_list.children[::-1] 
+            if child.done_counter < child.done_counter_max 
+            and f'{datetime.datetime.today():%a}' in child.secondary_text
+            ]
         make_overview_notefication('habit', content=content)
 
     class AddHabitButton(MDFloatingBottomButton):
@@ -478,14 +483,18 @@ class BasicHabit(ContainerSupport, BaseListItem):
         # get current time
         now = datetime.datetime.now()
         now_time = datetime.datetime.strptime(f'{now:%H:%M}', '%H:%M')
+        
+        # from which reminder time to start
+        still_acitve_reminder = self.done_counter_max - self.done_counter if self.done_counter > len(self.tertiary_text) else self.done_counter
 
         # make sure reminder times are not empty and today in reminder days
         if all([
             f'{now:%a}' in self.secondary_text.split(', '),
             self.tertiary_text not in [None, '', ' '],
-            self.ids.check_box_habit.disabled != True
+            self.ids.check_box_habit.disabled != True,
         ]):
-            for index, time in enumerate(self.tertiary_text.split(', ')):
+            # iterates over remaining active reminders (Habit.tertiary_text)
+            for index, time in enumerate(self.tertiary_text.split(', ')[still_acitve_reminder:]):
                 remaining_time = (datetime.datetime.strptime(
                     time, '%H:%M') - now_time).total_seconds()
 
@@ -539,7 +548,7 @@ class BasicHabit(ContainerSupport, BaseListItem):
             self.check_state = 'normal'
 
             # increase done_counter
-            if self.done_counter_max > 0 and self.done_counter < self.done_counter_max:
+            if self.done_counter_max > 0:
                 self.done_counter += 1
                 self.update_notification_trigger()
 
@@ -550,9 +559,6 @@ class BasicHabit(ContainerSupport, BaseListItem):
         # done_counter_max has to be upper limit for done_counter
         if self.done_counter_max < 1:
             self.done_counter_max = 1
-
-        elif self.done_counter > self.done_counter_max:
-            self.done_counter = self.done_counter_max
 
         self.check_for_disableing()
 
@@ -565,7 +571,6 @@ class BasicHabit(ContainerSupport, BaseListItem):
         # by finishing habit finish_date is set to today
         elif self.done_counter == self.done_counter_max and self.opponent not in [None, '', ' ']:
             self.finish_date = f'{datetime.datetime.today():%d.%m.%Y}'
-            self.opponent.get_hit(self.avatar.attack)
 
             # deactivate notifications after completing habit
             for trigger in self.trigger_list:
@@ -585,9 +590,9 @@ class BasicHabit(ContainerSupport, BaseListItem):
         - checking if habit should be disabled (exept RightMenuIconButtonHabit)
         """
         # only deactivate habit if done today
-        if self.done_counter == self.done_counter_max and self.finish_date == f'{datetime.datetime.today():%d.%m.%Y}':
+        if self.done_counter >= self.done_counter_max and self.finish_date == f'{datetime.datetime.today():%d.%m.%Y}':
             self.disable_habit()
-            self.ids.check_box_habit.active = True
+            # self.ids.check_box_habit.active = True
 
         # for re-activation of habit in case done_counter_max is increased after compleating habit
         elif self.done_counter < self.done_counter_max and self.finish_date == f'{datetime.datetime.today():%d.%m.%Y}':
@@ -600,10 +605,7 @@ class BasicHabit(ContainerSupport, BaseListItem):
         if len(self.ids) != 0:
 
             # disable all widgets in Habit exept RightMenuIconButtonHabit
-            # for kv_id in [self.ids.priority_id, self.ids.check_box_habit, self.ids._text_container]:
-            #     setattr(kv_id, 'disabled', 'True')
-
-            for kv_id in [self.ids.priority_id, self.ids.check_box_habit, self.ids._text_container]:
+            for kv_id in [self.ids.priority_id, self.ids._text_container]:
                 setattr(kv_id, 'disabled', 'True')
 
             # set backgroung to gray as inactivation indicator
@@ -617,7 +619,7 @@ class BasicHabit(ContainerSupport, BaseListItem):
             self.disabled = False
 
             # reactivating every widget seperatly (did not work by self.disabled = False alone)
-            for kv_id in [self.ids.priority_id, self.ids.check_box_habit, self.ids._text_container]:
+            for kv_id in [self.ids.priority_id, self.ids._text_container]:
                 kv_id.disabled = False
 
                 # checkbox needs to be avtive set to False (removing cheked mark)

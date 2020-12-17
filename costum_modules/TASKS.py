@@ -430,13 +430,16 @@ class BasicTask(ContainerSupport, BaseListItem):
             self.opponent.get_hit(self.avatar.attack)
 
             # cancel all trigger if task done before due_date
+            self.cancel_notification_trigger()  
+            
+            # cancel auto_fail
+            self.cancel_fail_trigger()
+            
+            # cancel notification trigger
             self.cancel_notification_trigger()
             
             # delete task
             self.self_removal()
-            
-            # cancel auto_fail
-            self.cancel_fail_trigger()
     
     def fail_task(self, *args):
         self.avatar.get_hit(self.opponent.attack)
