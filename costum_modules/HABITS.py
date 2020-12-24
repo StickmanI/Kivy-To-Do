@@ -3,6 +3,8 @@
 import json
 import sys
 
+from costum_modules.HOLIDAYS import *
+
 from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 from costum_modules.NOTIFICATIONS import *
 from kivy.lang import Builder
@@ -345,7 +347,8 @@ class HabitView(MDFloatLayout):
             if child.done_counter < child.done_counter_max 
             and f'{datetime.datetime.today():%a}' in child.secondary_text
             ]
-        make_overview_notefication('habit', content=content)
+        
+        make_overview_notefication('habit', content)
 
     class AddHabitButton(MDFloatingBottomButton):
 
@@ -472,7 +475,9 @@ class BasicHabit(ContainerSupport, BaseListItem):
                 self.last_used = f'{datetime.datetime.today():%d.%m.%Y}'
 
     def habit_failed(self, *args):
-        self.avatar.get_hit(self.opponent.attack)
+        calender = MyCalender()
+        if f'{datetime.datetime.today():%d.%m}' not in calender.holidays:
+            self.avatar.get_hit(self.opponent.attack)
 
         # cancel all trigger of this habit
         for trigger in self.trigger_list:
@@ -481,20 +486,20 @@ class BasicHabit(ContainerSupport, BaseListItem):
     def create_notification_trigger(self, *args):
 
         # get current time
-        now = datetime.datetime.now()
-        now_time = datetime.datetime.strptime(f'{now:%H:%M}', '%H:%M')
+        now = datetime.datetime.now()        
         
         # from which reminder time to start
         still_acitve_reminder = self.done_counter_max - self.done_counter if self.done_counter > len(self.tertiary_text) else self.done_counter
 
         # make sure reminder times are not empty and today in reminder days
         if all([
-            f'{now:%a}' in self.secondary_text.split(', '),
+            f'{datetime.datetime.now() :%a}' in self.secondary_text.split(', '),
             self.tertiary_text not in [None, '', ' '],
             self.ids.check_box_habit.disabled != True,
         ]):
             # iterates over remaining active reminders (Habit.tertiary_text)
             for index, time in enumerate(self.tertiary_text.split(', ')[still_acitve_reminder:]):
+                now_time = datetime.datetime.strptime(f'{now:%H:%M}', '%H:%M')
                 remaining_time = (datetime.datetime.strptime(
                     time, '%H:%M') - now_time).total_seconds()
 
