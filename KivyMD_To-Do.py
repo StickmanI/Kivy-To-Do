@@ -1,43 +1,23 @@
+import os
+# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+
 from kivy.config import Config
 Config.read(r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy\config.ini')
 # Kivy imports
 # -----------------------------------------------------------------------------#
+
+
 from costum_modules.HABITS import *
 from costum_modules.TASKS import *
 from costum_modules.ENAMY import *
 from costum_modules.AVATAR import *
 from kivymd.app import MDApp
 from kivy.lang import Builder
-import sys
 
 
+from costum_modules.NOTIFICATIONS import *
 # imports
 # ----------------------------------------------------------------------------#
-
-
-sys.path.append(
-    r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy_with_custom_modules')
-
-
-# KivyMD imports
-# -----------------------------------------------------------------------------#
-
-
-# for closing terminal after start, without closing app
-# -----------------------------------------------------------------------------#
-
-import ctypes
-import os
-import win32process
-
-hwnd = ctypes.windll.kernel32.GetConsoleWindow()
-if hwnd != 0:
-    ctypes.windll.user32.ShowWindow(hwnd, 0)
-    ctypes.windll.kernel32.CloseHandle(hwnd)
-    _, pid = win32process.GetWindowThreadProcessId(hwnd)
-    os.system('taskkill /PID ' + str(pid) + ' /f')
-
-# -----------------------------------------------------------------------------#
 
 kv_string = '''
 #<KvLang>
@@ -193,6 +173,8 @@ class MainApp(MDApp):
 
         self.root.ids.habit_view.load_habits()
         self.root.ids.task_view.load_tasks()
+        
+        self.root.ids.habit_view.check_for_failed_habits()
 
     def on_stop(self):
         self.root.ids.enemy.save_enemy_to_file()
@@ -200,6 +182,7 @@ class MainApp(MDApp):
 
         self.root.ids.habit_view.save_habits()
         self.root.ids.task_view.save_tasks()
+    
 
 
 if __name__ == '__main__':

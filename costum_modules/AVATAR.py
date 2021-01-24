@@ -164,13 +164,19 @@ class Avatar(MDBoxLayout):
             self.current_health = self.maximum_health
 
         # being defeated
-        elif self.current_health == 0:
+        elif self.current_health <= 0:
             self.being_defeated()
 
     def being_defeated(self, *args):
         # leval down penalty and loose exp for this level by defeat
         self.level -= 1
         self.exp = 0
+        
+        self.refill_health()
+
+    def refill_health(self):
+        self.current_healt = self.maximum_health
+        return None
 
     def on_level(self, *args):
         # change stats depending on level by level up

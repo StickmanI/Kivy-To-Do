@@ -326,16 +326,12 @@ class HabitView(MDFloatLayout):
                 )
 
             # habits already done today --> disabled
-            self.check()
+            self.check_for_disabeling()
 
         except IOError:
             pass
 
-    def check(self, *args):
-        """
-        - disabled habit if done today and application was reloaded
-        - resets Habit.done_counter if finish date is not today
-        """
+    def check_for_disabeling(self, *args):
         for child in self.ids.habit_list.children:
             child.check_for_disableing()
 
@@ -345,11 +341,24 @@ class HabitView(MDFloatLayout):
         content = [
             child.text for child in self.ids.habit_list.children[::-1] 
             if child.done_counter < child.done_counter_max 
-            and f'{datetime.datetime.today():%a}' in child.secondary_text
+            and f'{datetime.datetime.today() :%a}' in child.secondary_text
             ]
         
-        make_overview_notefication('habit', content)
+        if len(content) > 0:
+            self.new_overview_notification(content)
+        return None
+    
+    def new_overview_notification(self, notification_content, *args):        
+        return OverviewNotification(notification_content)
 
+    def check_for_failed_habits(self):
+        
+        # checks at end of day (start of application next day) for not done habits
+        # iterate over all habits
+        # for each habit execute check_for_failed()
+        for child in self.ids.habit_list.children:
+            child.check_for_failed()
+        
     class AddHabitButton(MDFloatingBottomButton):
 
         def show_task_template(self, title):
@@ -458,104 +467,115 @@ class BasicHabit(ContainerSupport, BaseListItem):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.update_last_used(self.last_used)
-        self.create_notification_trigger()
-
-    def update_last_used(self, value, *args):
-        if value not in [None, '', ' ']:
-
-            # value and now in datetime format
-            given_value = datetime.datetime.strptime(value, '%d.%m.%Y')
-            now = datetime.datetime.strptime(
-                f'{datetime.datetime.today():%d.%m.%Y}', '%d.%m.%Y')
-
-            # check if last_used in past --> habit failed
-            if given_value < now:
-                self.habit_failed()
-                self.last_used = f'{datetime.datetime.today():%d.%m.%Y}'
-
-    def habit_failed(self, *args):
-        calender = MyCalender()
-        if f'{datetime.datetime.today():%d.%m}' not in calender.holidays:
-            self.avatar.get_hit(self.opponent.attack)
-
-        # cancel all trigger of this habit
-        for trigger in self.trigger_list:
-            trigger.cancel()
-
-    def create_notification_trigger(self, *args):
-
-        # get current time
-        now = datetime.datetime.now()        
         
-        # from which reminder time to start
-        still_acitve_reminder = self.done_counter_max - self.done_counter if self.done_counter > len(self.tertiary_text) else self.done_counter
-
-        # make sure reminder times are not empty and today in reminder days
-        if all([
-            f'{datetime.datetime.now() :%a}' in self.secondary_text.split(', '),
-            self.tertiary_text not in [None, '', ' '],
-            self.ids.check_box_habit.disabled != True,
-        ]):
-            # iterates over remaining active reminders (Habit.tertiary_text)
-            for index, time in enumerate(self.tertiary_text.split(', ')[still_acitve_reminder:]):
-                now_time = datetime.datetime.strptime(f'{now:%H:%M}', '%H:%M')
-                remaining_time = (datetime.datetime.strptime(
-                    time, '%H:%M') - now_time).total_seconds()
-
-                # only future events allowed (positive remainint_time)
-                if remaining_time > 0:
-
-                    # creating multiple trigger
-                    setattr(
-                        self,
-                        '_trigger' + str(index),
-                        Clock.create_trigger(
-                            self.call_normal_notification,
-                            remaining_time
-                        )
-                    )
-                    # add triggers to trigger_list
-                    # later used for canceling trigger
-                    self.trigger_list.append(getattr(self, f'_trigger{index}'))
-
-            # on change in Habit.text/secondary_text/tertiary_text update trigger
-            self.bind(
-                text=lambda *args: self.update_notification_trigger(),
-                secondary_text=lambda *args: self.update_notification_trigger(),
-                tertiary_text=lambda *args: self.update_notification_trigger(),
+        self.create_notifications()
+        
+        self.bind(
+            text=lambda *args: self.update_notifications(),
+            secondary_text=lambda *args: self.update_notifications(),
+            tertiary_text=lambda *args: self.update_notifications(),
             )
 
-        # execute trigger by app build
-        for trigger in self.trigger_list:
-            trigger()
+    def update_last_used(self, value, *args):
+        
+        # changes last_used variable to today
+        # called after habit done
+        today = f'{datetime.datetime.today() :%d.%m.%Y}'
+        if value != today:
+            self.last_used = today
+            
+        return None
+    
+    def check_for_failed(self):
+        
+        # habit fails if done_counter less than done_counter_max
+        if self.done_counter < self.done_counter_max and self.last_used != f'{datetime.datetime.today() :%d.%m.%Y}':
+            self.habit_failed()
+            self.update_last_used(self.last_used)
+        return None
+        
+    def reset_done_counter(self):
+        self.done_counter = 0
+        return None
 
-    def update_notification_trigger(self, *args):
+    def is_today_normal_day(self, *args):
+        calender = MyCalender()
+        today = datetime.datetime.today()
+        
+        return True if f'{today :%d.%m}' not in calender.holidays else False
+        
+    def habit_failed(self, *args):
+        if self.is_today_normal_day():
+            self.avatar.get_hit(self.opponent.attack)
+            
+        # need to reset habit done_counter
+        self.reset_done_counter()            
+        return None
 
-        # cancel all trigger of this habit
-        for trigger in self.trigger_list:
-            trigger.cancel()
+    def create_notifications(self, *args):
+        
+        # no notifications on holidays
+        if self.is_today_normal_day():
+            reminder_times = self.tertiary_text.split(', ')
+            
+            # creates list of notification objects (rest done by object)
+            self.notification_list = [
+                Notification(self.text, reminder_time)
+                for reminder_time in reminder_times
+                ]
+            
+            # disables notifications of reminders done before firing notification
+            self.deactivate_previously_done_notifications()
+        return None
+    
+    def deactivate_previously_done_notifications(self):
+        
+        reminder_times = self.tertiary_text.split(', ')
+                
+        # deactivate notification of reminder times already done previously
+        done_reminder = len(reminder_times) if self.done_counter >= len(reminder_times) else self.done_counter
+        
+        done_reminder_indices = [index for index in range(done_reminder)]
+        
+        for done_index in done_reminder_indices:
+            self.notification_list[done_index].deactivate()
+            
+        return None
+        
+        # from which reminder time to start
+        # still_acitve_reminder = self.done_counter_max - self.done_counter if self.done_counter > len(self.tertiary_text) else self.done_counter
 
-        # recreate trigger
-        self.create_notification_trigger()
-
-    def call_normal_notification(self, *args):
-
-        Clock.schedule_once(
-            lambda *args: normal_notification(self.text)
-        )
-
+        # make sure reminder times are not empty and today in reminder days
+        # if all([
+        #     f'{datetime.datetime.now() :%a}' in self.secondary_text.split(', '),
+        #     self.tertiary_text not in [None, '', ' '],
+        #     self.ids.check_box_habit.disabled != True,
+        # ]):
+        #     # iterates over remaining active reminders (Habit.tertiary_text)
+        #     for index, time in enumerate(self.tertiary_text.split(', ')[still_acitve_reminder:]):
+        #         now_time = datetime.datetime.strptime(f'{now:%H:%M}', '%H:%M')
+        #         remaining_time = (datetime.datetime.strptime(
+        #             time, '%H:%M') - now_time).total_seconds()
+           
+    def update_notifications(self, *args):
+        
+        # overrides old notifications --> therefore no error by deleting or adding notifications
+        self.create_notifications()
+        
+        return None
+    
     def on_check_state(self, *args):
         if self.check_state == 'down' and self.ids.check_box_habit.disabled == False:
 
             # reducing enemy current_healt
             self.opponent.get_hit(self.avatar.attack)
             self.check_state = 'normal'
+            self.update_last_used(self.last_used)
 
             # increase done_counter
             if self.done_counter_max > 0:
                 self.done_counter += 1
-                self.update_notification_trigger()
+                self.update_notifications()
 
             # habit completed for today
 
@@ -574,12 +594,9 @@ class BasicHabit(ContainerSupport, BaseListItem):
             self.done_counter = 0
 
         # by finishing habit finish_date is set to today
+        # check for opponent == None, due to also execution by init (loading habit changes done_counter --> firing on_done_counter)
         elif self.done_counter == self.done_counter_max and self.opponent not in [None, '', ' ']:
             self.finish_date = f'{datetime.datetime.today():%d.%m.%Y}'
-
-            # deactivate notifications after completing habit
-            for trigger in self.trigger_list:
-                trigger.cancel()
 
         self.check_for_disableing()
 
@@ -588,19 +605,19 @@ class BasicHabit(ContainerSupport, BaseListItem):
         # resets finish_date to None if finish_date is in past
         if self.finish_date not in [None, '', f'{datetime.datetime.today():%d.%m.%Y}']:
             self.finish_date = ''
-            self.done_counter = 0
+            self.reset_done_counter()
 
     def check_for_disableing(self, *args):
         """
         - checking if habit should be disabled (exept RightMenuIconButtonHabit)
         """
         # only deactivate habit if done today
-        if self.done_counter >= self.done_counter_max and self.finish_date == f'{datetime.datetime.today():%d.%m.%Y}':
+        if self.done_counter >= self.done_counter_max and self.finish_date == f'{datetime.datetime.today() :%d.%m.%Y}':
             self.disable_habit()
             # self.ids.check_box_habit.active = True
 
         # for re-activation of habit in case done_counter_max is increased after compleating habit
-        elif self.done_counter < self.done_counter_max and self.finish_date == f'{datetime.datetime.today():%d.%m.%Y}':
+        elif self.done_counter < self.done_counter_max:
             self.reactivate_habit()
 
     def disable_habit(self, *args):

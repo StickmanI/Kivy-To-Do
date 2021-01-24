@@ -2,6 +2,7 @@
 # -----------------------------------------------------------------
 
 import sys
+from costum_modules.HOLIDAYS import *
 
 from costum_modules.NOTIFICATIONS import *
 from kivy.lang import Builder
@@ -176,6 +177,7 @@ class TaskView(MDFloatLayout):
 
         # calling notifications
         Clock.schedule_interval(self.call_overview_notification, 3600)
+        return None
 
     def add_task(self, *args, description='', due_date='', priority='0'):
 
@@ -240,7 +242,13 @@ class TaskView(MDFloatLayout):
     def call_overview_notification(self, *args):
         content = [
             child.description for child in self.ids.task_list.children[::-1]]
-        make_overview_notefication('task', content=content)
+        
+        if len(content) > 0:
+            self.new_overview_notification(content)
+        return None
+
+    def new_overview_notification(self, notification_content, *args):
+        return OverviewNotification(notification_content)
 
     class AddTaskButton(MDFloatingBottomButton):
 
@@ -417,125 +425,70 @@ class BasicTask(ContainerSupport, BaseListItem):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.create_notification_trigger()
-        self.create_fail_trigger()
+        
+        self.create_fail_notification()
+        
+        self.bind(
+            text=lambda *args: self.update_fail_notification(),
+            secondary_text=lambda *args: self.update_fail_notification(),
+            tertiary_text=lambda *args: self.update_fail_notification(),
+        )
 
     def self_removal(self):
         self.parent.remove_widget(self)
     
+    def is_today_normal_day(self, *args):
+        calender = MyCalender()
+        today = datetime.datetime.today()
+
+        return True if f'{today :%d.%m}' not in calender.holidays else False
+    
+    def create_fail_notification(self):
+        
+        # no notifications on holidays
+        # only tasks with due_date can have fail notifications
+        if self.is_today_normal_day() and len(self.secondary_text) > 0:
+            
+            due_date, due_time = self.secondary_text.split(' ')
+            
+            if due_date == f'{datetime.datetime.today() :%d.%m.%Y}':
+                
+                # creates list of notification objects (rest done by object)
+                failure_text = 'You failed:\n'
+                self.notification_list = [
+                    Notification(failure_text + self.text, due_time, execute_after_notification=self.fail_task)
+                    ]
+        return None
+            
+    def update_fail_notification(self):
+        
+        # overrides old notifications --> therefore no error by deleting or adding notifications
+        self.create_fail_notification()
+
+        return None
+    
+    def fail_task(self):
+        
+        # avatar receives damage
+        self.avatar.get_hit(self.opponent.attack)
+        
+        # remove task
+        self.self_removal()
+        
+        return None
+        
     def on_check_state(self, *args):
         if self.check_state == 'down':
 
             # done task --> damage enemy
             self.opponent.get_hit(self.avatar.attack)
-
-            # cancel all trigger if task done before due_date
-            self.cancel_notification_trigger()  
-            
-            # cancel auto_fail
-            self.cancel_fail_trigger()
-            
-            # cancel notification trigger
-            self.cancel_notification_trigger()
             
             # delete task
             self.self_removal()
     
-    def fail_task(self, *args):
-        self.avatar.get_hit(self.opponent.attack)
+    
 
-        normal_notification(
-            title=f'Failed Task: {self.description}')
-
-    def create_fail_trigger(self, *args):
-        
-        # init _fail_trigger
-        self._fail_trigger = None
-
-        # get current time
-        now = datetime.datetime.now()
-
-        # check if due_date is valid
-        if self.due_date not in [None, '', ' ']:
-
-            # calculate remaining time until due_date
-            remaining_time = (datetime.datetime.strptime(
-                self.due_date, '%d.%m.%Y %H:%M') - now).total_seconds()
-
-            # create trigger with remaining_time
-            self._fail_trigger = Clock.create_trigger(
-                self.fail_task,
-                remaining_time
-            )
-            # update notification trigger upon changes in task description and due_date
-            self.bind(due_date=self.update_fail_trigger)
-
-            # if due_date not in past schedule trigger to execute in remaining_time seconds
-            if remaining_time > 0:
-                self._fail_trigger()
-            else:
-                pass
-
-    def cancel_fail_trigger(self, *args):
-        if self._fail_trigger is not None:
-            self._fail_trigger.cancel()
-
-    def update_fail_trigger(self, *args):
-
-        # remove _fail_trigger
-        self.cancel_fail_trigger()
-
-        # create new _fail_trigger
-        self.create_fail_trigger()
-
-    def create_notification_trigger(self, *args):
-
-        # get current time
-        now = datetime.datetime.now()
-
-        # check if due_date is valid
-        if self.due_date not in [None, '', ' '] and self.__class__ != OneLineTask:
-
-            # calculate remaining time until due_date
-            remaining_time = (datetime.datetime.strptime(
-                self.due_date, '%d.%m.%Y %H:%M') - datetime.timedelta(minutes=15) - now).total_seconds()
-
-            # create trigger with remaining_time
-            self._notification_trigger = Clock.create_trigger(
-                self.call_deadline_notifications,
-                remaining_time
-            )
-            
-            # update notification trigger upon changes in task description and due_date
-            self.bind(due_date=self.update_notification_trigger,
-                      description=self.update_notification_trigger)
-
-            # if due_date not in past schedule trigger to execute in remaining_time seconds
-            if remaining_time > 0:
-                self._notification_trigger()
-            else:
-                pass
-
-    def cancel_notification_trigger(self, *args):
-        if self.__class__ != OneLineTask:
-            self._notification_trigger.cancel()
-
-    def update_notification_trigger(self, *args):
-
-        # stops execution of previous trigger (same trigger, but before change)
-        self.cancel_notification_trigger()
-
-        # recreates notificatin trigger
-        self.create_notification_trigger()
-
-    def call_deadline_notifications(self, *args):
-
-        # first notification 15 min prior to due_date
-        deadline_notification(str(self.description), 15)
-
-        # last notification 5 min prior to due_date
-        Clock.schedule_once(
-            lambda *args: deadline_notification(self.description, 5, final_notification=True), 10 * 60)
+    
 
     class PriorityLabel(IRightBody, MDLabel):
         priority = NumericProperty()
