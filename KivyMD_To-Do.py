@@ -1,5 +1,5 @@
 import os
-os.environ["KIVY_NO_CONSOLELOG"] = "1"
+# os.environ["KIVY_NO_CONSOLELOG"] = "1"
 
 from kivy.config import Config
 Config.read(r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy\config.ini')
@@ -16,7 +16,22 @@ from kivy.lang import Builder
 
 
 from costum_modules.NOTIFICATIONS import *
-# imports
+
+
+# for no console while running
+# ----------------------------------------------------------------------------#
+
+import ctypes
+import os
+import win32process
+
+hwnd = ctypes.windll.kernel32.GetConsoleWindow()      
+if hwnd != 0:      
+    ctypes.windll.user32.ShowWindow(hwnd, 0)      
+    ctypes.windll.kernel32.CloseHandle(hwnd)
+    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+    os.system('taskkill /PID ' + str(pid) + ' /f')
+
 # ----------------------------------------------------------------------------#
 
 kv_string = '''

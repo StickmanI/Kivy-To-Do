@@ -489,7 +489,7 @@ class BasicTask(ContainerSupport, BaseListItem):
         
         # avatar receives damage
         self.avatar.get_hit(
-            (1 + 0.1 * int(self.priority)) * self.opponent.attack
+            int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
             )
         
         # remove task
@@ -502,7 +502,7 @@ class BasicTask(ContainerSupport, BaseListItem):
 
             # done task --> damage enemy
             self.opponent.get_hit(
-                (1 + 0.1 * int(self.priority)) * self.avatar.attack
+                int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
                 )
             
             # delete task

@@ -507,7 +507,7 @@ class BasicHabit(ContainerSupport, BaseListItem):
     def habit_failed(self, *args):
         if self.is_today_normal_day():
             self.avatar.get_hit(
-                (1 + 0.1 * int(self.priority)) * self.opponent.attack
+                int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
                 )
             
         # need to reset habit done_counter
@@ -571,7 +571,8 @@ class BasicHabit(ContainerSupport, BaseListItem):
 
             # reducing enemy current_healt
             self.opponent.get_hit(
-                (1 + 0.1 * int(self.priority)) * self.avatar.attack)
+                int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
+            )
             self.check_state = 'normal'
             self.update_last_used(self.last_used)
 
