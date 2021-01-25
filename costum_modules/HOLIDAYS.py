@@ -22,8 +22,7 @@ class MyCalender:
         # method calls to fill self.holidays
         self.calculate_eastern()
         self.fill_holidays()
-    
-    
+     
     def calculate_eastern(self):
         """
         calculation of easter date via gausian formular
@@ -65,7 +64,6 @@ class MyCalender:
         self.date_eastern = datetime.datetime.strptime(f'{self.easter_day}.{this_year}', '%d.%m.%Y')
         return None
         
-    
     def fill_holidays(self):
         eastern_related_holiday_days = [
             self.date_eastern,

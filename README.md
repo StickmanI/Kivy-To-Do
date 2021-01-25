@@ -16,8 +16,8 @@ Due to bad to no reception all the time around my home and most other To-Do-List
 ---
 
 ## Features
-- local stored files
-- application position and size depending on values in config.ini
+- locally stored files
+- application window position and size depending on values in config.ini
     ```
     config.ini
     ...
@@ -33,44 +33,56 @@ Due to bad to no reception all the time around my home and most other To-Do-List
 
 
 
-- Tasks 
+- ### Tasks 
     - with or without due date
-    - Task can fail --> Enemy attacks Avatar
+    - Task failed (due date reached) --> Enemy attacks Avatar
     - completed Tasks --> Avatar attacks Enemy
     
 <img width="300" src="demo gifs\Tasks.gif">
 
-- Habits
-    - repetition per day
-    - can have any amount of reminders
+- ### Habits
+    - adjustable amount of repetition per day
+    - can have any number of reminders (amount reminder is independent of amount of repetition per day)
     - repetition cycle per week
-    - like Tasks can hurt your enemy or your avatar
-    - only fails next day after not completing habit
+    - like Tasks, can hurt Enemy or Avatar
+    - fails day after not completing habit
     - can also be completed on days outside repetition cycle
+    - habits can be skipped on holidays (no damage to Avatar)
 
 <img width="300" src="demo gifs\Habits.gif">
 
-- Enemy
+- ### Enemy
     - gets attacked by Avatar via finishing Tasks and Habits
     - can respawn and gets stronger
-    - enemy picture random from files in enemy_pictures
+    - enemy picture random from files in /enemy_pictures
     - name corresponds to file name
-- Avatar
+- ### Avatar
     - gets hurt by not completing Habits or Tasks with due dates (Enemy attacks Avatar)
     - receives exp after defeating Enemy
         - can than level up and deal more damage
+    - Avatar picture can be changed by click on Avatar (in Avatar tab)
+    - Avatar name can be changed by click on Avatar name (next to picture or at stats page)
+    - level decreases after too many tasks/habits not finished (by 0 health)
+        - maximum health and attack decrease together with level
 
+---
 
 ## Getting started
 1. Download/Clone repository
 2. Run KivyMD_To_Dp.py
 3. Done
 
----
 
 ## Roadmap
+- [ ] annoyance factor to motivate task/habit completion
 - [ ] make available for other systems (currently only works on windows)
 - [ ] themed background
+
+## Changes in Versions
+> ### *Version 1.0*
+>- habits cannot fail on holidays
+>- notification fixed (still needs testing)
+>- priority affects damage received and dealt (high priority --> high damage)
 
 ## License
 [MIT License](LICENSE)

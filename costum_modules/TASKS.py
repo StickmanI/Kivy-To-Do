@@ -179,7 +179,7 @@ class TaskView(MDFloatLayout):
         Clock.schedule_interval(self.call_overview_notification, 3600)
         return None
 
-    def add_task(self, *args, description='', due_date='', priority='0'):
+    def add_task(self, *args, description='', due_date='', priority='0', index=0):
 
         # add task with due date
         if due_date not in [None, '', ' ']:
@@ -190,7 +190,7 @@ class TaskView(MDFloatLayout):
                     priority=priority,
                     opponent=self.opponent,
                     avatar=self.avatar,
-                )
+                ), index
             )
 
         # add task without due date
@@ -201,8 +201,9 @@ class TaskView(MDFloatLayout):
                     priority=priority,
                     opponent=self.opponent,
                     avatar=self.avatar,
-                )
+                ), index
             )
+        return None
 
     def save_tasks(self, *args):
         # collect infos for each habit
@@ -221,6 +222,7 @@ class TaskView(MDFloatLayout):
 
         with open(r'saves/save_tasks.json', 'w') as file:
             json.dump(saved_tasks, file, indent=4)
+        return None
 
     def load_tasks(self, *args):
         try:
@@ -238,6 +240,7 @@ class TaskView(MDFloatLayout):
 
         except IOError:
             pass
+        return None
 
     def call_overview_notification(self, *args):
         content = [
@@ -250,6 +253,21 @@ class TaskView(MDFloatLayout):
     def new_overview_notification(self, notification_content, *args):
         return OverviewNotification(notification_content)
 
+    def switch_task_type(self, description='', due_date='', priority='0', index=0, *args):
+        task_list = self.children[1].children[0].children
+        
+        # removes old task
+        task_list[index].self_removal()
+        
+        # adds new task at same position
+        self.add_task(
+            description=description,
+            due_date=due_date,
+            priority=priority,
+            index=index
+        )
+        return None
+    
     class AddTaskButton(MDFloatingBottomButton):
 
         def show_task_template(self, title):
@@ -434,7 +452,7 @@ class BasicTask(ContainerSupport, BaseListItem):
             tertiary_text=lambda *args: self.update_fail_notification(),
         )
 
-    def self_removal(self):
+    def self_removal(self, *args):
         self.parent.remove_widget(self)
     
     def is_today_normal_day(self, *args):
@@ -443,7 +461,7 @@ class BasicTask(ContainerSupport, BaseListItem):
 
         return True if f'{today :%d.%m}' not in calender.holidays else False
     
-    def create_fail_notification(self):
+    def create_fail_notification(self, *args):
         
         # no notifications on holidays
         # only tasks with due_date can have fail notifications
@@ -460,17 +478,19 @@ class BasicTask(ContainerSupport, BaseListItem):
                     ]
         return None
             
-    def update_fail_notification(self):
+    def update_fail_notification(self, *args):
         
         # overrides old notifications --> therefore no error by deleting or adding notifications
         self.create_fail_notification()
 
         return None
     
-    def fail_task(self):
+    def fail_task(self, *args):
         
         # avatar receives damage
-        self.avatar.get_hit(self.opponent.attack)
+        self.avatar.get_hit(
+            (1 + 0.1 * int(self.priority)) * self.opponent.attack
+            )
         
         # remove task
         self.self_removal()
@@ -481,14 +501,19 @@ class BasicTask(ContainerSupport, BaseListItem):
         if self.check_state == 'down':
 
             # done task --> damage enemy
-            self.opponent.get_hit(self.avatar.attack)
+            self.opponent.get_hit(
+                (1 + 0.1 * int(self.priority)) * self.avatar.attack
+                )
             
             # delete task
             self.self_removal()
+            
+        return None
     
-    
-
-    
+    def find_task_index_in_TaskView(self, *args):
+        task_list = self.parent.children        
+        index_task = task_list.index(self)        
+        return index_task
 
     class PriorityLabel(IRightBody, MDLabel):
         priority = NumericProperty()
@@ -561,18 +586,19 @@ class BasicTask(ContainerSupport, BaseListItem):
             }
             priority_key = str(len(task_instance.ids.priority_id.text))
 
-            # # set task attributes in TaskTemplate Widgets
+            # set task attributes in TaskTemplate Widgets
             template.task_description.text = task_instance.description
 
-            # # set priority chooser to value of priority in Task
+            # set priority chooser to value of priority in Task
             template.priority_choice.text = priority_translation[str(
                 priority_key)]
 
-            # # set value for due date to value Task.due_date
+            # set value for due date to value Task.due_date
             template.due_date_time_task.text = task_instance.due_date
 
-            # # close TaskTemplate
+            # close TaskTemplate
             menu_instance.dismiss()
+            return None
 
         def show_task_template(self, title, task_instance=None, function=None):
             self.dialog = None
@@ -611,18 +637,24 @@ class BasicTask(ContainerSupport, BaseListItem):
 
             # update due date
             task_instance.due_date = template.due_date_time_task.text
-
-            if template.due_date_time_task.text in [None, '', ' ']:
-                # first creates new OneLineTask with changed values
-                # first create, due to reference of root widget through task_instance, which would be None if deleted first
-                task_instance.parent.parent.parent.add_task(
-                    description=template.task_description.text,
-                    priority=new_priority
+            
+            # get index of old taks
+            task_index = task_instance.find_task_index_in_TaskView()
+            
+            # replace old task with new one 
+            # OnelineTask or TwolineTask depending on due_date
+            # automaticly removes old task
+            task_list = task_instance.parent.parent.parent
+            task_list.switch_task_type(
+                description=task_instance.description,
+                due_date=task_instance.due_date,
+                priority=new_priority,
+                index=task_index
                 )
-                task_instance.self_removal()
 
             # closes TaskTemplate
             self.dialog.dismiss()
+            return None
 
 
 class OneLineTask(OneLineAvatarListItem, BasicTask):

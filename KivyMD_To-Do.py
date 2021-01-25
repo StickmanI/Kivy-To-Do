@@ -1,5 +1,5 @@
 import os
-# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 
 from kivy.config import Config
 Config.read(r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy\config.ini')
@@ -84,6 +84,10 @@ MDBottomNavigation:
     #     MDBoxLayout:
     #         orientation: 'vertical'
     #         padding: 15, 15
+            
+    #         Button:
+    #             text: 'lv up'
+    #             on_press: avatar.exp += 10
         
     #         MirrorEnemy:
     #             mirror_of: enemy
@@ -143,7 +147,7 @@ MDBottomNavigation:
                     font_size: 24
                     
                 MDLabel:
-                    text: f'{avatar.exp} / {avatar.exp_level_up}'
+                    text: str(avatar.exp) + ' / ' + str(avatar.exp_level_up)
                     font_size: 24
                 
 
