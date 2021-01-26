@@ -9,8 +9,9 @@ class OverviewNotification:
     def __init__(self, content_notification):
         self.content = self.format_content(content_notification)
         self.title = f'Do not forget:\n'
-
-        self.reduce_content_length(self.content)
+        
+        if len(content_notification) > 3:
+            self.content = self.reduce_content_length(self.content)
 
         self.call_overview_notification()
         return None
@@ -37,7 +38,7 @@ class OverviewNotification:
         # only <4 lines visible
         notification.notify(
             title=self.title,
-            message=self.reduce_content_length(self.content),
+            message=self.content,
             timeout=7.5 * len(self.content),
         )
         return None

@@ -176,7 +176,8 @@ class TaskView(MDFloatLayout):
         ]
 
         # calling notifications
-        Clock.schedule_interval(self.call_overview_notification, 3600)
+        # Clock.schedule_interval(self.call_overview_notification, 3600)
+        Clock.schedule_interval(self.call_overview_notification, 6)
         return None
 
     def add_task(self, *args, description='', due_date='', priority='0', index=0):
