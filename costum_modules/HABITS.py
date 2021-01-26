@@ -272,6 +272,12 @@ class HabitView(MDFloatLayout):
         Clock.schedule_interval(self.call_overview_notification, 3600)
 
     def add_habit(self, description='', week_day='', reminder=[], priority='0', repetition_done=0, repetition=0, finish_date='', last_used='', *args):
+        
+        # prevents habit from failing after creation and reload
+        # would be unfair to get damage for creating new habits after reload
+        if last_used == '' and finish_date == '':
+            last_used = f'{datetime.datetime.today() :%d.%m.%Y}'
+        
         self.ids.habit_list.add_widget(
             ThreeLineHabit(
                 text=str(description),
@@ -488,8 +494,11 @@ class BasicHabit(ContainerSupport, BaseListItem):
     
     def check_for_failed(self):
         
+        # define yesterday as string
+        yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
+        
         # habit fails if done_counter less than done_counter_max
-        if self.done_counter < self.done_counter_max and self.last_used != f'{datetime.datetime.today() :%d.%m.%Y}':
+        if self.done_counter < self.done_counter_max and self.last_used != f'{datetime.datetime.today() :%d.%m.%Y}' and self.finish_date != yesterday:
             self.habit_failed()
             self.update_last_used(self.last_used)
         return None
