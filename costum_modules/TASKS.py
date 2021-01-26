@@ -26,7 +26,6 @@ from kivymd.toast import toast
 from kivymd.uix.picker import MDDatePicker, MDTimePicker
 
 
-
 sys.path.append(
     r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy_with_custom_modules')
 
@@ -176,8 +175,7 @@ class TaskView(MDFloatLayout):
         ]
 
         # calling notifications
-        # Clock.schedule_interval(self.call_overview_notification, 3600)
-        Clock.schedule_interval(self.call_overview_notification, 6)
+        Clock.schedule_interval(self.call_overview_notification, 3600)
         return None
 
     def add_task(self, *args, description='', due_date='', priority='0', index=0):
@@ -246,7 +244,7 @@ class TaskView(MDFloatLayout):
     def call_overview_notification(self, *args):
         content = [
             child.description for child in self.ids.task_list.children[::-1]]
-        
+
         if len(content) > 0:
             self.new_overview_notification(content)
         return None
@@ -256,10 +254,10 @@ class TaskView(MDFloatLayout):
 
     def switch_task_type(self, description='', due_date='', priority='0', index=0, *args):
         task_list = self.children[1].children[0].children
-        
+
         # removes old task
         task_list[index].self_removal()
-        
+
         # adds new task at same position
         self.add_task(
             description=description,
@@ -268,7 +266,7 @@ class TaskView(MDFloatLayout):
             index=index
         )
         return None
-    
+
     class AddTaskButton(MDFloatingBottomButton):
 
         def show_task_template(self, title):
@@ -444,9 +442,9 @@ class BasicTask(ContainerSupport, BaseListItem):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
         self.create_fail_notification()
-        
+
         self.bind(
             text=lambda *args: self.update_fail_notification(),
             secondary_text=lambda *args: self.update_fail_notification(),
@@ -455,65 +453,66 @@ class BasicTask(ContainerSupport, BaseListItem):
 
     def self_removal(self, *args):
         self.parent.remove_widget(self)
-    
+
     def is_today_normal_day(self, *args):
         calender = MyCalender()
         today = datetime.datetime.today()
 
         return True if f'{today :%d.%m}' not in calender.holidays else False
-    
+
     def create_fail_notification(self, *args):
-        
+
         # no notifications on holidays
         # only tasks with due_date can have fail notifications
         if self.is_today_normal_day() and len(self.secondary_text) > 0:
-            
+
             due_date, due_time = self.secondary_text.split(' ')
-            
+
             if due_date == f'{datetime.datetime.today() :%d.%m.%Y}':
-                
+
                 # creates list of notification objects (rest done by object)
                 failure_text = 'You failed:\n'
                 self.notification_list = [
-                    Notification(failure_text + self.text, due_time, execute_after_notification=self.fail_task)
-                    ]
+                    Notification(failure_text + self.text, due_time,
+                                 execute_after_notification=self.fail_task)
+                ]
         return None
-            
+
     def update_fail_notification(self, *args):
-        
+
         # overrides old notifications --> therefore no error by deleting or adding notifications
         self.create_fail_notification()
 
         return None
-    
+
     def fail_task(self, *args):
-        
+
         # avatar receives damage
         self.avatar.get_hit(
             int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
-            )
-        
+        )
+
         # remove task
         self.self_removal()
-        
+
         return None
-        
+
     def on_check_state(self, *args):
         if self.check_state == 'down':
 
             # done task --> damage enemy
             self.opponent.get_hit(
                 int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
-                )
-            
+            )
+
             # delete task
             self.self_removal()
-            
+
         return None
-    
+
     def find_task_index_in_TaskView(self, *args):
-        task_list = self.parent.children        
-        index_task = task_list.index(self)        
+        task_list = self.parent.children
+        index_task = task_list.index(self)
         return index_task
 
     class PriorityLabel(IRightBody, MDLabel):
@@ -638,11 +637,11 @@ class BasicTask(ContainerSupport, BaseListItem):
 
             # update due date
             task_instance.due_date = template.due_date_time_task.text
-            
+
             # get index of old taks
             task_index = task_instance.find_task_index_in_TaskView()
-            
-            # replace old task with new one 
+
+            # replace old task with new one
             # OnelineTask or TwolineTask depending on due_date
             # automaticly removes old task
             task_list = task_instance.parent.parent.parent
@@ -651,7 +650,7 @@ class BasicTask(ContainerSupport, BaseListItem):
                 due_date=task_instance.due_date,
                 priority=new_priority,
                 index=task_index
-                )
+            )
 
             # closes TaskTemplate
             self.dialog.dismiss()
