@@ -458,7 +458,7 @@ class BasicHabit(ContainerSupport, BaseListItem):
     done_counter = NumericProperty(0)
     done_counter_max = NumericProperty(1)
     finish_date = StringProperty('')
-    last_used = StringProperty('')
+    last_used = StringProperty(f'{datetime.datetime.today() :%d.%m.%Y}')
 
     priority = OptionProperty("1", options=[
         '0',    # no
@@ -494,11 +494,17 @@ class BasicHabit(ContainerSupport, BaseListItem):
     
     def check_for_failed(self):
         
+        # prevents error if no date is given in self.last_used
+        # thecnicly should not be possible (without meddling with files)
+        if self.last_used in [None, '', ' ']:
+            self.update_last_used(None)
+        
         # define yesterday as string
+        last_used_date = datetime.datetime.strptime(self.last_used, '%d.%m.%Y')
         yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
         
-        # habit fails if done_counter less than done_counter_max
-        if self.done_counter < self.done_counter_max and self.last_used != f'{datetime.datetime.today() :%d.%m.%Y}' and self.finish_date != yesterday:
+        # habit fails if last_used < yesterday (more in past)
+        if last_used_date < yesterday:
             self.habit_failed()
             self.update_last_used(self.last_used)
         return None
@@ -609,7 +615,7 @@ class BasicHabit(ContainerSupport, BaseListItem):
         # by finishing habit finish_date is set to today
         # check for opponent == None, due to also execution by init (loading habit changes done_counter --> firing on_done_counter)
         elif self.done_counter == self.done_counter_max and self.opponent not in [None, '', ' ']:
-            self.finish_date = f'{datetime.datetime.today():%d.%m.%Y}'
+            self.finish_date = f'{datetime.datetime.today() :%d.%m.%Y}'
 
         self.check_for_disableing()
 
