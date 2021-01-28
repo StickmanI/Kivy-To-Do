@@ -21,9 +21,11 @@ from kivymd.uix.menu import MDDropdownMenu
 
 from kivy.clock import Clock
 import datetime
+import textwrap
 from kivymd.toast import toast
 
 from kivymd.uix.picker import MDTimePicker
+from kivymd.uix.tooltip import MDTooltip
 
 
 sys.path.append(
@@ -59,6 +61,8 @@ Builder.load_string('''
     theme_text_color: 'Custom'
     text_color: root.theme_cls.primary_color
     font_style: 'H6'
+    text: self.short_description
+    tooltip_text: self.description
 
     LeftCheckboxHabit:
         id: check_box_habit
@@ -82,7 +86,6 @@ Builder.load_string('''
 
         DoneCounter:
             id: done_count
-            text: 'test'
             size_hint_x: None
             width: dp(75)
             font_size: 21
@@ -280,7 +283,7 @@ class HabitView(MDFloatLayout):
         
         self.ids.habit_list.add_widget(
             ThreeLineHabit(
-                text=str(description),
+                description=str(description),
                 secondary_text=str(week_day),
                 tertiary_text=str(', '.join(reminder)),
                 priority=str(priority),
@@ -446,7 +449,7 @@ class HabitView(MDFloatLayout):
 # -----------------------------------------------------------------
 
 
-class BasicHabit(ContainerSupport, BaseListItem):
+class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
 
     # check_state linked to checkbox
     # checked --> Task is done
@@ -454,6 +457,9 @@ class BasicHabit(ContainerSupport, BaseListItem):
 
     opponent = ObjectProperty(None)
     avatar = ObjectProperty(None)
+    
+    description = StringProperty('')
+    short_description = StringProperty('')
 
     done_counter = NumericProperty(0)
     done_counter_max = NumericProperty(1)
@@ -482,6 +488,25 @@ class BasicHabit(ContainerSupport, BaseListItem):
             tertiary_text=lambda *args: self.update_notifications(),
             )
 
+    def on_description(self, *args):
+        self.description_shortening()
+        return None
+
+    def description_shortening(self, *args):
+        length_description = len(self.description)
+        short_description_limit = 30
+        long_description_limit = 60
+
+        # shortens description if longer than 30 charackters
+        self.short_description = self.description if length_description <= short_description_limit else self.description[
+            :short_description_limit - 3] + ' ...'
+
+        # add line breaks to self.description if too long
+        self.description = '\n'.join(
+            textwrap.TextWrapper(width=long_description_limit).wrap(self.description))
+
+        return None
+    
     def update_last_used(self, value, *args):
         
         # changes last_used variable to today
@@ -501,7 +526,11 @@ class BasicHabit(ContainerSupport, BaseListItem):
         
         # define yesterday as string
         last_used_date = datetime.datetime.strptime(self.last_used, '%d.%m.%Y')
-        yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
+        
+        # last_used_date has no hours, minutes, ...
+        # therefore replacing hours, minutes, seconds and microseconds with 0
+        # else yesterday would be greater by hours, minutes or seconds even if day was yesterday
+        yesterday = (datetime.datetime.today() - datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
         
         # habit fails if last_used < yesterday (more in past)
         if last_used_date < yesterday:

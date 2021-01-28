@@ -21,10 +21,12 @@ from kivymd.color_definitions import colors
 from kivy.clock import Clock
 import datetime
 import json
+import textwrap
 from kivymd.toast import toast
 
 from kivymd.uix.picker import MDDatePicker, MDTimePicker
 
+from kivymd.uix.tooltip import MDTooltip
 
 sys.path.append(
     r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy_with_custom_modules')
@@ -61,7 +63,6 @@ Builder.load_string('''
     MDTextField:
         id: task_description
         hint_text: 'Task Description'
-        max_text_length: 30
         
     MDBoxLayout:
         orientation: 'horizontal'
@@ -111,7 +112,8 @@ Builder.load_string('''
     theme_text_color: 'Custom'
     text_color: root.theme_cls.primary_color
     font_style: 'H6'
-    text: self.description
+    text: self.short_description
+    tooltip_text: self.description
     
     LeftCheckbox:
         state: root.check_state
@@ -420,7 +422,7 @@ class TaskTemplate(MDBoxLayout):
 
 # Task
 # ---------------------------------------------------
-class BasicTask(ContainerSupport, BaseListItem):
+class BasicTask(ContainerSupport, BaseListItem, MDTooltip):
 
     opponent = ObjectProperty()
     avatar = ObjectProperty()
@@ -430,6 +432,8 @@ class BasicTask(ContainerSupport, BaseListItem):
     check_state = OptionProperty("normal", options=["normal", "down"])
 
     description = StringProperty('')
+    short_description = StringProperty('')
+    
     due_date = StringProperty('')
     priority = OptionProperty("1", options=[
         '0',    # no
@@ -439,6 +443,8 @@ class BasicTask(ContainerSupport, BaseListItem):
     ])
 
     _no_ripple_effect = True
+    
+    
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -451,6 +457,26 @@ class BasicTask(ContainerSupport, BaseListItem):
             tertiary_text=lambda *args: self.update_fail_notification(),
         )
 
+    def on_description(self, *args):
+        self.description_shortening()
+        return None
+
+    def description_shortening(self, *args):        
+        length_description = len(self.description)
+        short_description_limit = 30
+        long_description_limit = 30
+        
+        # shortens description if longer than 30 charackters
+        self.short_description = self.description if length_description <= short_description_limit else self.description[
+            :short_description_limit - 3] + ' ...'
+        
+        # add line breaks to self.description if too long
+        self.description = '\n'.join(
+            textwrap.TextWrapper(width=60).wrap(self.description))
+            
+        return None
+            
+    
     def self_removal(self, *args):
         self.parent.remove_widget(self)
 

@@ -1,5 +1,5 @@
 import os
-# os.environ["KIVY_NO_CONSOLELOG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 
 from kivy.config import Config
 Config.read(r'C:\Users\Jens\Desktop\Programming\Python\Task_Game_kivy\config.ini')
