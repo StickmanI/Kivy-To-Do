@@ -487,6 +487,7 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
             secondary_text=lambda *args: self.update_notifications(),
             tertiary_text=lambda *args: self.update_notifications(),
             )
+        return None
 
     def on_description(self, *args):
         self.description_shortening()
@@ -531,15 +532,27 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
         # therefore replacing hours, minutes, seconds and microseconds with 0
         # else yesterday would be greater by hours, minutes or seconds even if day was yesterday
         yesterday = (datetime.datetime.today() - datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        today = datetime.datetime.today()
         
         # habit fails if last_used < yesterday (more in past)
-        if last_used_date < yesterday:
+        # and assigned for yesterday
+        if all([
+            last_used_date < yesterday,
+            self.day_in_due_date(yesterday),
+            ]):
             self.habit_failed()
             self.update_last_used(self.last_used)
+            self.reset_done_counter()
+            
         return None
         
+    def day_in_due_date(self, date, *args):
+        date_as_day_name = f'{date :%a}'
+        return True if date_as_day_name in self.secondary_text else False        
+    
     def reset_done_counter(self):
         self.done_counter = 0
+        self.update_last_used(self.last_used)
         return None
 
     def is_today_normal_day(self, *args):
@@ -560,8 +573,14 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
 
     def create_notifications(self, *args):
         
+        # today as string (3 letter code)
+        today = datetime.datetime.today()
+        
         # no notifications on holidays
-        if self.is_today_normal_day():
+        if all([
+            self.is_today_normal_day(),
+            self.day_in_due_date(today)
+        ]):
             reminder_times = self.tertiary_text.split(', ')
             
             # creates list of notification objects (rest done by object)
@@ -587,21 +606,6 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
             self.notification_list[done_index].deactivate()
             
         return None
-        
-        # from which reminder time to start
-        # still_acitve_reminder = self.done_counter_max - self.done_counter if self.done_counter > len(self.tertiary_text) else self.done_counter
-
-        # make sure reminder times are not empty and today in reminder days
-        # if all([
-        #     f'{datetime.datetime.now() :%a}' in self.secondary_text.split(', '),
-        #     self.tertiary_text not in [None, '', ' '],
-        #     self.ids.check_box_habit.disabled != True,
-        # ]):
-        #     # iterates over remaining active reminders (Habit.tertiary_text)
-        #     for index, time in enumerate(self.tertiary_text.split(', ')[still_acitve_reminder:]):
-        #         now_time = datetime.datetime.strptime(f'{now:%H:%M}', '%H:%M')
-        #         remaining_time = (datetime.datetime.strptime(
-        #             time, '%H:%M') - now_time).total_seconds()
            
     def update_notifications(self, *args):
         
@@ -651,7 +655,7 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
     def on_finish_date(self, *args):
 
         # resets finish_date to None if finish_date is in past
-        if self.finish_date not in [None, '', f'{datetime.datetime.today():%d.%m.%Y}']:
+        if self.finish_date not in [None, '', f'{datetime.datetime.today() :%d.%m.%Y}']:
             self.finish_date = ''
             self.reset_done_counter()
 

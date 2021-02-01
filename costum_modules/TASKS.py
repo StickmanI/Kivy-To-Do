@@ -475,9 +475,9 @@ class BasicTask(ContainerSupport, BaseListItem, MDTooltip):
             textwrap.TextWrapper(width=60).wrap(self.description))
             
         return None
-            
-    
+              
     def self_removal(self, *args):
+        self.remove_tooltip()
         self.parent.remove_widget(self)
 
     def is_today_normal_day(self, *args):
