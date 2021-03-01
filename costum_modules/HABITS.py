@@ -3,6 +3,8 @@
 import json
 import sys
 
+from kivy.core import window
+
 from costum_modules.HOLIDAYS import *
 
 from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
@@ -63,6 +65,8 @@ Builder.load_string('''
     font_style: 'H6'
     text: self.short_description
     tooltip_text: self.description
+    
+    on_press: self.test()
 
     LeftCheckboxHabit:
         id: check_box_habit
@@ -532,24 +536,31 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
         # therefore replacing hours, minutes, seconds and microseconds with 0
         # else yesterday would be greater by hours, minutes or seconds even if day was yesterday
         yesterday = (datetime.datetime.today() - datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-        today = datetime.datetime.today()
+        today = datetime.datetime.today().replace(
+            hour=0, minute=0, second=0, microsecond=0)
         
-        # habit fails if last_used < yesterday (more in past)
+        # habit fails if last_used <= yesterday (more in past)
         # and assigned for yesterday
         if all([
-            last_used_date < yesterday,
+            self.done_counter < self.done_counter_max,
+            last_used_date < today,
             self.day_in_due_date(yesterday),
             ]):
             self.habit_failed()
-            self.update_last_used(self.last_used)
-            self.reset_done_counter()
+            
+        elif all([
+            self.done_counter > 0,
+            last_used_date != today,
+        ]):
+            self.reset_habit()
             
         return None
         
     def day_in_due_date(self, date, *args):
-        date_as_day_name = f'{date :%a}'
-        return True if date_as_day_name in self.secondary_text else False        
-    
+        if date not in [None, '', ' ']:
+            date_as_day_name = f'{date :%a}'
+            return True if date_as_day_name in self.secondary_text else False        
+        
     def reset_done_counter(self):
         self.done_counter = 0
         self.update_last_used(self.last_used)
@@ -568,9 +579,15 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
                 )
             
         # need to reset habit done_counter
-        self.reset_done_counter()            
+        self.reset_done_counter()
+        self.update_last_used(None)
         return None
 
+    def reset_habit(self, *args):
+        self.update_last_used(self.last_used)
+        self.reset_done_counter()
+        return None
+    
     def create_notifications(self, *args):
         
         # today as string (3 letter code)
@@ -609,6 +626,10 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
            
     def update_notifications(self, *args):
         
+        # deactivate old notificaiton
+        for notification in self.notification_list:
+            notification.deactivate()            
+            
         # overrides old notifications --> therefore no error by deleting or adding notifications
         self.create_notifications()
         
@@ -705,7 +726,11 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
 
     def self_removal(self, *args):
         self.parent.remove_widget(self)
-
+    
+    def test(self, *args):
+        print([(reminder.active, f'{reminder.notification_time :%H:%M}',
+                reminder.remaining_time)for reminder in self.notification_list])
+    
     class LeftCheckboxHabit(ILeftBodyTouch, MDCheckbox):
         '''
         class for placing checkbox to right of text

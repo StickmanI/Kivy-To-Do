@@ -92,8 +92,7 @@ class Notification:
                 lambda *args: self.call_pyler_notification(
                     self.notification_text),
                 self.remaining_time - self.check_time
-            )
-            self.deactivate()
+            )            
         return None
 
     def initiate_trigger(self, *args):
@@ -113,10 +112,13 @@ class Notification:
         return None
 
     def call_pyler_notification(self, text, *args):
-        notification.notify(
-            title=str(text),
-            message=' ',
-        )
+        if self.active:
+            notification.notify(
+                title=str(text),
+                message=' ',
+                timeout=10,
+            )
+        self.deactivate()
 
         # executes function after notification if defined
         if self.execute_after_notification != None:
@@ -125,21 +127,11 @@ class Notification:
 
     def deactivate(self, *args):
         self.active = False
+        self.stop()
         return None
 
     def reactivate(self, *args):
         self.active = True
-        return None
-
-    def update_notification(self, new_text, new_notification_time, *args):
-
-        # stop triggering events with old notification settings
-        self.stop()
-        self.deactivate()
-
-        # set new settings
-        self.notification_text = new_text
-        self.notification_time = self.string_to_datetime(new_notification_time)
         return None
 
     def __repr__(self):
