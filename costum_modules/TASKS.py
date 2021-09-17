@@ -244,11 +244,12 @@ class TaskView(MDFloatLayout):
         return None
 
     def call_overview_notification(self, *args):
-        content = [
-            child.description for child in self.ids.task_list.children[::-1]]
+        pass
+        # content = [
+        #     child.description for child in self.ids.task_list.children[::-1]]
 
-        if len(content) > 0:
-            self.new_overview_notification(content)
+        # if len(content) > 0:
+        #     self.new_overview_notification(content)
         return None
 
     def new_overview_notification(self, notification_content, *args):
@@ -505,6 +506,10 @@ class BasicTask(ContainerSupport, BaseListItem, MDTooltip):
         return None
 
     def update_fail_notification(self, *args):
+        
+        # cancel notidications
+        for notification in self.notification_list:
+            notification.stop()
 
         # overrides old notifications --> therefore no error by deleting or adding notifications
         self.create_fail_notification()

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "test",
+  "steps": [
+    {
+      "file": "KivyMD_To-Do.py",
+      "description": "obsolete due to execution with pythonw and kivy_no_consollog",
+      "line": 21,
+      "selection": {
+        "start": {
+          "line": 21,
+          "character": 1
+        },
+        "end": {
+          "line": 33,
+          "character": 53
+        }
+      }
+    }
+  ]
+}

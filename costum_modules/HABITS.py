@@ -349,16 +349,17 @@ class HabitView(MDFloatLayout):
             child.check_for_disableing()
 
     def call_overview_notification(self, *args):
+        pass
         
         # collects Habit.description of all active habits if habit is scheduled for this day
-        content = [
-            child.text for child in self.ids.habit_list.children[::-1] 
-            if child.done_counter < child.done_counter_max 
-            and f'{datetime.datetime.today() :%a}' in child.secondary_text
-            ]
+        # content = [
+        #     child.text for child in self.ids.habit_list.children[::-1] 
+        #     if child.done_counter < child.done_counter_max 
+        #     and f'{datetime.datetime.today() :%a}' in child.secondary_text
+        #     ]
         
-        if len(content) > 0:
-            self.new_overview_notification(content)
+        # if len(content) > 0:
+        #     self.new_overview_notification(content)
         return None
     
     def new_overview_notification(self, notification_content, *args):        
@@ -477,7 +478,7 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
         '3',    # very high
     ])
 
-    trigger_list = ListProperty([])
+    notification_list = ListProperty([])
 
     _no_ripple_effect = True
 
@@ -543,7 +544,7 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
         # and assigned for yesterday
         if all([
             self.done_counter < self.done_counter_max,
-            last_used_date < today,
+            last_used_date < yesterday,
             self.day_in_due_date(yesterday),
             ]):
             self.habit_failed()
@@ -626,12 +627,14 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
            
     def update_notifications(self, *args):
         
-        # deactivate old notificaiton
-        for notification in self.notification_list:
-            notification.deactivate()            
-            
-        # overrides old notifications --> therefore no error by deleting or adding notifications
-        self.create_notifications()
+        if self.notification_list != None:
+        
+            # deactivate old notificaiton
+            for notification in self.notification_list:
+                notification.deactivate()            
+                
+            # overrides old notifications --> therefore no error by deleting or adding notifications
+            self.create_notifications()
         
         return None
     
@@ -642,6 +645,7 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
             self.opponent.get_hit(
                 int((1 + 0.1 * int(self.priority)) * self.opponent.attack)
             )
+                            
             self.check_state = 'normal'
             self.update_last_used(self.last_used)
 
@@ -649,8 +653,6 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
             if self.done_counter_max > 0:
                 self.done_counter += 1
                 self.update_notifications()
-
-            # habit completed for today
 
     def on_done_counter_max(self, *args):
 
@@ -728,8 +730,9 @@ class BasicHabit(ContainerSupport, BaseListItem, MDTooltip):
         self.parent.remove_widget(self)
     
     def test(self, *args):
-        print([(reminder.active, f'{reminder.notification_time :%H:%M}',
-                reminder.remaining_time)for reminder in self.notification_list])
+        if len(self.notification_list) is not 0:
+            print([(reminder.active, f'{reminder.notification_time :%H:%M}',
+                    reminder.remaining_time) for reminder in self.notification_list])
     
     class LeftCheckboxHabit(ILeftBodyTouch, MDCheckbox):
         '''
